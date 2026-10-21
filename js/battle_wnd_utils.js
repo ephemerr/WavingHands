@@ -80,12 +80,28 @@ function processPopHintAction(a) {
     }
 }
 
+function processDamageHintAction(a, restore) {
+    if (restore) {
+        return;
+    }
+    var warlock_idx = a.object_type === "monster" ? BU.map_monster_name_to_idx[a.object] : BU.map_warlock_name_to_idx[a.warlock_name];
+    if (warlock_idx === undefined) {
+        warlock_idx = BU.map_warlock_name_to_idx[a.warlock_name];
+    }
+    var ww = iWarlocks.children[warlock_idx];
+    console.log("processDamageHintAction", a.object_type, a.warlock_name, a.object, a.amount, warlock_idx);
+    if (ww && ww.showDamage) {
+        ww.showDamage(a.amount, a.object_type, a.object);
+    }
+}
+
 function processHintAction(a, restore) {
     console.log("BWU.processHintAction", JSON.stringify(a), restore);
     switch(a.action) {
     case "highlight": return processHighlightHintAction(a, restore);
     case "icon": return processHighlightIconAction(a, restore);
     case "pop": return processPopHintAction(a);
+    case "damage": return processDamageHintAction(a, restore);
     }
 }
 
@@ -155,6 +171,12 @@ function playHintActions(actions) {
     stopHintAnimation();
     for (i = 0, Ln = actions.length; i < Ln; ++i) {
         a = actions[i];
+        if (a.action === "damage") {
+            // Show the number as soon as the cause row appears; the target
+            // highlight still follows the normal icon/gesture frames.
+            processHintAction(a, false);
+            continue;
+        }
         if ((a.action === "highlight") && (a.object_type === "warlock") && (a.object === "hp")) {
             targets.push(a);
             continue;
@@ -233,7 +255,14 @@ function processAllHintAction(actions, restore) {
 
 function prepareWarockToHint(restore) {
     for (var i = 0, Ln = iWarlocks.children.length; i < Ln; ++i) {
-        iWarlocks.children[i].hintOnOff(restore);
+        var ww = iWarlocks.children[i];
+        if (ww.clearDamageNumbers) {
+            ww.clearDamageNumbers();
+        }
+        if (ww.restoreAllNews) {
+            ww.restoreAllNews();
+        }
+        ww.hintOnOff(restore);
     }
 }
 
