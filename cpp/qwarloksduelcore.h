@@ -274,7 +274,7 @@ protected:
     bool prepareMonsterHtml();
     bool prepareWarlockHtml();
     bool parseSpecReadyBattleValues(QString &Data);
-    void setPossibleSpell();
+    void setPossibleSpell(const QString &Data);
     void calcBattleDecision();
     void prepareBattleChatAndHistory(QString &Data);
     void processRefferer();
