@@ -41,19 +41,9 @@ function assignWizardColor(w) {
     return WIZARD_COLORS[idx]; // more warlocks than colors (monsters battles): reuse
 }
 
-// The training bots are golems, not wizards. Ask the core, which knows the bot
-// names, so read-only and archived battles get the same portrait as live ones.
-function isBotWarlock(w) {
-    try {
-        return JSON.parse(mainWindow.gameCore.getWarlockStats(w.name)).is_bot === true;
-    } catch (e) {
-        return false;
-    }
-}
-
 function prepareWarlock(w) {
     w.color = assignWizardColor(w);
-    if (isBotWarlock(w)) {
+    if (w.is_bot) {
         // The wizard color is still reserved above, so the human player keeps the
         // color he would get in a human-vs-human battle.
         w.color = "golem";
