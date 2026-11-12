@@ -254,7 +254,36 @@ void QWarloksDuelCore::aiCreateNewChallenge() {
 
 void QWarloksDuelCore::createNewChallenge(bool Fast, bool Private, bool ParaFC, bool Maladroid, int Count,
                                           int FriendlyLevel, QString Description, QString Warlock, int IsOnline, bool Background) {
-    qDebug() << "QWarloksDuelCore::createNewChallenge" << Fast << Private << ParaFC << Maladroid << Count <<
+    // The player page is the server's active-game list: a battle that has just
+    // finished can still be in the cached Ready/Waiting lists. Refresh it before
+    // a user-created challenge so the server sees the current three-game count.
+    if (!Background && !_isAI && !_isAsService) {
+        if (_pendingChallenge.active) {
+            qDebug() << "QWarloksDuelCore::createNewChallenge already pending";
+            return;
+        }
+        _pendingChallenge.active = true;
+        _pendingChallenge.fast = Fast;
+        _pendingChallenge.privateGame = Private;
+        _pendingChallenge.paraFC = ParaFC;
+        _pendingChallenge.maladroit = Maladroid;
+        _pendingChallenge.count = Count;
+        _pendingChallenge.friendlyLevel = FriendlyLevel;
+        _pendingChallenge.description = Description;
+        _pendingChallenge.warlock = Warlock;
+        _pendingChallenge.isOnline = IsOnline;
+        _pendingChallenge.background = Background;
+        scanState(false);
+        return;
+    }
+    sendNewChallenge(Fast, Private, ParaFC, Maladroid, Count, FriendlyLevel,
+                     Description, Warlock, IsOnline, Background);
+}
+
+void QWarloksDuelCore::sendNewChallenge(bool Fast, bool Private, bool ParaFC, bool Maladroid, int Count,
+                                        int FriendlyLevel, const QString &Description,
+                                        const QString &Warlock, int IsOnline, bool Background) {
+    qDebug() << "QWarloksDuelCore::sendNewChallenge" << Fast << Private << ParaFC << Maladroid << Count <<
         FriendlyLevel << Description << Warlock << IsOnline << Background;
     //Q_UNUSED(Fast);
     if (!Background) {
@@ -3139,6 +3168,14 @@ void QWarloksDuelCore::processRefferer() {
 
 bool QWarloksDuelCore::finishScan(QString &Data, bool ForceBattleList) {
     parsePlayerInfo(Data, ForceBattleList);
+    if (_pendingChallenge.active) {
+        PendingChallenge pending = _pendingChallenge;
+        _pendingChallenge = PendingChallenge();
+        sendNewChallenge(pending.fast, pending.privateGame, pending.paraFC,
+                         pending.maladroit, pending.count, pending.friendlyLevel,
+                         pending.description, pending.warlock, pending.isOnline,
+                         pending.background);
+    }
     if (!ForceBattleList) {
         getChallengeList(true);
     }
@@ -4332,6 +4369,7 @@ void QWarloksDuelCore::logout() {
     _rosterRevision = 0;
     _turnReadyTimer.stop();
     _ordersBattleID = 0;
+    _pendingChallenge = PendingChallenge();
 
     _isLogined = false;
     _login.clear();

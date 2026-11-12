@@ -404,6 +404,9 @@ protected:
     bool hasUnstartedBattle();
     int findChallengeToJoin();
     void releaseKeepMeOn(const QString &url);
+    void sendNewChallenge(bool Fast, bool Private, bool ParaFC, bool Maladroid, int Count,
+                          int FriendlyLevel, const QString &Description, const QString &Warlock,
+                          int IsOnline, bool Background);
 private:
     // user login
     bool _isLogined;
@@ -522,6 +525,22 @@ private:
     QString _inviteToBattle;
     QMap<int, QBattleInfo *> _battleInfo;
     QBattleInfo* _newBattle;
+    // A user-created challenge waits for a fresh player page so the server's
+    // active-game count cannot be based on a battle that has already finished.
+    struct PendingChallenge {
+        bool active = false;
+        bool fast = false;
+        bool privateGame = false;
+        bool paraFC = false;
+        bool maladroit = false;
+        int count = 0;
+        int friendlyLevel = 0;
+        QString description;
+        QString warlock;
+        int isOnline = 0;
+        bool background = false;
+    };
+    PendingChallenge _pendingChallenge;
     int _timeAskForNotification;
 
     // current battle
